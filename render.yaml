@@ -1,0 +1,21 @@
+# Render Blueprint for Life Reset.
+# Apply from the Render dashboard (New > Blueprint) or `render blueprint launch`.
+# Cost: Starter web service $7/mo + 1 GB disk ~$0.25/mo.
+# OPENAI_API_KEY is a secret: set it in the Render dashboard (Environment tab)
+# after creating the key at platform.openai.com. Never commit it here.
+services:
+  - type: web
+    name: life-reset
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /health
+    disk:
+      name: life-reset-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: DB_PATH
+        value: /data/app.db
+      - key: OPENAI_API_KEY
+        sync: false
