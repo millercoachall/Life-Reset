@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Icon, LogoMark, EmptyArt, ProgressRing } from "./icons";
+import type { IconName, ArtVariant } from "./icons";
 import {
   callAction,
   setToken,
@@ -41,21 +43,21 @@ type View =
 
 const LOCKED_VIEWS: View[] = ["rescue", "week", "home", "money", "family", "myself", "pending", "resetday", "weeklyreset"];
 
-const NAV: { view: View; label: string; icon: string; section?: string }[] = [
-  { view: "today", label: "Today", icon: "☀️" },
-  { view: "braindump", label: "Brain Dump", icon: "🧠" },
-  { view: "rescue", label: "Life Rescue", icon: "🛟" },
-  { view: "week", label: "My Week", icon: "📅" },
-  { view: "home", label: "My Home", icon: "🏠", section: "Sections" },
-  { view: "money", label: "My Money", icon: "💵" },
-  { view: "family", label: "My Family", icon: "👨‍👩‍👧" },
-  { view: "myself", label: "Myself", icon: "🌿" },
-  { view: "pending", label: "Pending", icon: "⏳" },
-  { view: "resetday", label: "Reset My Day", icon: "🔄", section: "Resets" },
-  { view: "weeklyreset", label: "Weekly Reset", icon: "🗓️" },
-  { view: "packages", label: "Packages", icon: "📦", section: "Account" },
-  { view: "household", label: "Household", icon: "⚙️" },
-  { view: "help", label: "Help", icon: "❓" },
+const NAV: { view: View; label: string; icon: IconName; section?: string }[] = [
+  { view: "today", label: "Today", icon: "sun" },
+  { view: "braindump", label: "Brain Dump", icon: "cloud" },
+  { view: "rescue", label: "Life Rescue", icon: "lifebuoy" },
+  { view: "week", label: "My Week", icon: "calendar" },
+  { view: "home", label: "My Home", icon: "home", section: "Sections" },
+  { view: "money", label: "My Money", icon: "wallet" },
+  { view: "family", label: "My Family", icon: "users" },
+  { view: "myself", label: "Myself", icon: "leaf" },
+  { view: "pending", label: "Pending", icon: "hourglass" },
+  { view: "resetday", label: "Reset My Day", icon: "refresh", section: "Resets" },
+  { view: "weeklyreset", label: "Weekly Reset", icon: "calendarCheck" },
+  { view: "packages", label: "Packages", icon: "package", section: "Account" },
+  { view: "household", label: "Household", icon: "sliders" },
+  { view: "help", label: "Help", icon: "help" },
 ];
 
 const MOBILE_NAV: View[] = ["today", "braindump", "rescue", "week", "packages"];
@@ -81,10 +83,46 @@ function Err({ message }: { message: string | null }) {
   return <div className="error">{message}</div>;
 }
 
+// Illustrated empty state — a small spot illustration + an encouraging line.
+function EmptyState({ art, title, message }: { art: ArtVariant; title: string; message: string }) {
+  return (
+    <div className="empty-state">
+      <EmptyArt variant={art} />
+      <div className="empty-title">{title}</div>
+      <p className="muted">{message}</p>
+    </div>
+  );
+}
+
+// Consecutive days (ending today, or yesterday if nothing done today yet)
+// with at least one task completed — from tasks already in the app state.
+function computeStreak(tasks: Task[]): number {
+  const doneDays = new Set(
+    tasks
+      .filter((t) => t.status === "done" && t.completedAt)
+      .map((t) => t.completedAt!.slice(0, 10))
+  );
+  let streak = 0;
+  const d = new Date();
+  let key = d.toISOString().slice(0, 10);
+  if (!doneDays.has(key)) {
+    d.setDate(d.getDate() - 1);
+    key = d.toISOString().slice(0, 10);
+  }
+  while (doneDays.has(key)) {
+    streak++;
+    d.setDate(d.getDate() - 1);
+    key = d.toISOString().slice(0, 10);
+  }
+  return streak;
+}
+
 function LockedScreen({ onGoPackages }: { onGoPackages: () => void }) {
   return (
     <div className="card locked">
-      <div className="lock-ico">🔒</div>
+      <div className="lock-ico">
+        <Icon name="lock" size={44} />
+      </div>
       <h2>This section is part of a paid plan</h2>
       <p className="muted">
         Your free plan includes Today and Brain Dump. Unlock everything — Life Rescue, My Week,
@@ -130,7 +168,12 @@ function AuthScreen() {
     <div className="auth-wrap">
       <div className="card auth-card">
         <div className="logo">
-          <div className="logo-mark">↺</div>
+          <div className="auth-art">
+            <EmptyArt variant="sun" width={110} />
+          </div>
+          <div className="logo-mark">
+            <LogoMark size={72} />
+          </div>
           <h1 style={{ marginTop: 8 }}>LIFE RESET</h1>
           <p className="muted" style={{ margin: 0 }}>
             Get your life back.
@@ -309,6 +352,9 @@ function TaskRow({
   const [title, setTitle] = useState(task.title);
   const [notes, setNotes] = useState(task.notes ?? "");
   const assignee = state.members.find((m) => m.id === task.assigneeMemberId);
+  // Left-edge accent: coral for urgent, sage for home, gold for money.
+  const accent =
+    task.priority === "high" ? "coral" : task.category === "home" ? "sage" : task.category === "money" ? "gold" : "none";
 
   async function run(action: string, args: Record<string, unknown>) {
     setError(null);
@@ -322,18 +368,23 @@ function TaskRow({
 
   return (
     <div>
-      <div className={`task-row ${task.status === "done" ? "done" : ""}`}>
+      <div className={`task-row accent-${accent} ${task.status === "done" ? "done" : ""}`}>
         <button
           className="check"
           aria-label={task.status === "done" ? "Mark open" : "Mark done"}
           onClick={() => run("setTaskStatus", { status: task.status === "done" ? "open" : "done" })}
         >
-          {task.status === "done" ? "✓" : ""}
+          <svg className="check-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12.5l4.5 4.5L19 7.5" />
+          </svg>
         </button>
         <div style={{ minWidth: 0 }}>
           <div className="task-title">{task.title}</div>
           <div className="task-meta">
-            <span className={`tag tag-${task.priority}`}>{task.priority}</span>
+            <span className={`prio prio-${task.priority}`}>
+              <span className="prio-dot" />
+              {task.priority}
+            </span>
             <span className="tag">{task.category}</span>
             {task.estMinutes ? <span>· {task.estMinutes} min </span> : null}
             {task.dueDate ? <span>· due {fmtDate(task.dueDate)}</span> : null}
@@ -370,14 +421,14 @@ function TaskRow({
         </div>
         <div className="task-actions">
           <button
-            className="icon-btn"
+            className={`icon-btn ${task.pinned ? "pinned" : ""}`}
             title={task.pinned ? "Unpin from top 3" : "Pin to top 3"}
             onClick={() => run("togglePin", { pinned: !task.pinned })}
           >
-            {task.pinned ? "📌" : "📍"}
+            <Icon name="pin" size={19} filled={task.pinned} />
           </button>
           <button className="icon-btn" title="Edit" onClick={() => setEditing(!editing)}>
-            ✏️
+            <Icon name="pencil" size={18} />
           </button>
           <button
             className="icon-btn"
@@ -386,7 +437,7 @@ function TaskRow({
               if (window.confirm("Delete this task?")) run("deleteTask", {});
             }}
           >
-            🗑️
+            <Icon name="trash" size={18} />
           </button>
         </div>
       </div>
@@ -482,18 +533,23 @@ function TaskList({
   state,
   tasks,
   emptyText,
+  emptyTitle,
+  art,
   mineOnly,
 }: {
   state: AppState;
   tasks: Task[];
   emptyText: string;
+  emptyTitle?: string;
+  art?: ArtVariant;
   mineOnly: boolean;
 }) {
   const visible = useMemo(() => {
     if (!mineOnly) return tasks;
     return tasks.filter((t) => t.assigneeMemberId === state.viewer.id);
   }, [tasks, mineOnly, state.viewer.id]);
-  if (!visible.length) return <p className="muted">{emptyText}</p>;
+  if (!visible.length)
+    return <EmptyState art={art ?? "leaf"} title={emptyTitle ?? "All clear"} message={emptyText} />;
   return (
     <div>
       {visible.map((t) => (
@@ -516,6 +572,11 @@ function TodayView({
   const today = todayStr();
   const open = state.tasks.filter((t) => t.status === "open");
   const pinned = state.tasks.filter((t) => t.pinned && t.status === "open");
+  const pinnedAll = state.tasks.filter((t) => t.pinned);
+  const allTop3Done = pinnedAll.length > 0 && pinned.length === 0;
+  const streak = computeStreak(state.tasks);
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const startHere =
     pinned[0] ??
     open.filter((t) => t.dueDate && t.dueDate <= today).sort((a, b) => (a.dueDate! < b.dueDate! ? -1 : 1))[0] ??
@@ -531,16 +592,51 @@ function TodayView({
 
   return (
     <div>
-      <div className="topbar">
-        <h1 style={{ margin: 0 }}>Today</h1>
-        <span className="muted">
-          {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+      <div className="greeting">
+        <span className="greeting-ico">
+          <Icon name="sun" size={24} />
         </span>
+        <div>
+          <h1 style={{ margin: 0 }}>
+            {greeting}, {state.viewer.name}
+          </h1>
+          <span className="greet-date">
+            {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+          </span>
+        </div>
+        {streak > 0 ? (
+          <span className="streak-chip">
+            <Icon name="flame" size={16} />
+            {streak}-day streak
+          </span>
+        ) : (
+          <span className="streak-chip streak-start">
+            <Icon name="flame" size={16} />
+            Start your streak
+          </span>
+        )}
       </div>
+
+      {allTop3Done ? (
+        <div className="celebrate">
+          <span className="confetti-dot" style={{ left: "8%", top: "18%", background: "#e07856", animationDelay: "0s" }} />
+          <span className="confetti-dot" style={{ left: "88%", top: "24%", background: "#c9a227", animationDelay: "0.5s" }} />
+          <span className="confetti-dot" style={{ left: "16%", top: "72%", background: "#3f7d5c", animationDelay: "1s" }} />
+          <span className="confetti-dot" style={{ left: "82%", top: "68%", background: "#e07856", animationDelay: "1.4s" }} />
+          <span className="confetti-dot" style={{ left: "50%", top: "8%", background: "#c9a227", animationDelay: "0.8s" }} />
+          <span className="celebrate-ico">
+            <Icon name="sparkles" size={26} />
+          </span>
+          <div className="celebrate-title">Top 3 — all done!</div>
+          <p className="muted" style={{ margin: "4px 0 0" }}>
+            That&apos;s the whole list. Take the win — tomorrow starts fresh.
+          </p>
+        </div>
+      ) : null}
 
       {startHere ? (
         <div className="start-here">
-          <small style={{ color: "var(--sage)" }}>START HERE — YOUR NEXT STEP</small>
+          <small className="hero-eyebrow">Start here — your next step</small>
           <h2 style={{ marginTop: 4 }}>{startHere.title}</h2>
           <p style={{ margin: "4px 0 12px", opacity: 0.9 }}>
             {startHere.estMinutes ? `${startHere.estMinutes} minutes · ` : ""}
@@ -551,37 +647,53 @@ function TodayView({
         </div>
       ) : (
         <div className="card">
-          <h2>Nothing on the list yet</h2>
-          <p className="muted">Start with a Brain Dump — get it all out of your head, then sort it into a plan.</p>
+          <EmptyState
+            art="cloud"
+            title="Nothing on the list yet"
+            message="Start with a Brain Dump — get it all out of your head, then sort it into a plan."
+          />
         </div>
       )}
 
-      <div className="stat-grid">
-        <div className="stat">
-          <div className="num">{state.stats.openCount}</div>
-          <div className="lbl">Open tasks</div>
-        </div>
-        <div className="stat">
-          <div className="num">{state.stats.doneToday}</div>
-          <div className="lbl">Done today</div>
-        </div>
-        <div className="stat">
-          <div className="num">{state.stats.doneThisWeek}</div>
-          <div className="lbl">Done this week</div>
-        </div>
-        <div className="stat">
-          <div className="num">{state.stats.overdueCount}</div>
-          <div className="lbl">Overdue</div>
+      <div className="glance">
+        <ProgressRing pct={donePct} />
+        <div className="glance-stats">
+          <div className="gstat">
+            <div className="num">{state.stats.openCount}</div>
+            <div className="lbl">Open tasks</div>
+          </div>
+          <div className="gstat">
+            <div className="num">{state.stats.doneToday}</div>
+            <div className="lbl">Done today</div>
+          </div>
+          <div className="gstat">
+            <div className="num">{state.stats.doneThisWeek}</div>
+            <div className="lbl">Done this week</div>
+          </div>
+          <div className="gstat">
+            <div className="num">{state.stats.overdueCount}</div>
+            <div className="lbl">Overdue</div>
+          </div>
         </div>
       </div>
 
       <div className="card">
         <h2>Your top 3 priorities</h2>
-        <p className="muted">Pin tasks to keep them here. Tap the 📍 on any task to pin it.</p>
+        <p className="muted">
+          Pin tasks to keep them here. Tap the{" "}
+          <span className="inline-ico">
+            <Icon name="pin" size={14} />
+          </span>{" "}
+          on any task to pin it.
+        </p>
         {pinned.length ? (
           pinned.map((t) => <TaskRow key={t.id} task={t} state={state} />)
         ) : (
-          <p className="muted">No pinned tasks yet.</p>
+          <EmptyState
+            art="leaf"
+            title="No pinned tasks yet"
+            message="Tap the pin on any task to keep your top 3 here."
+          />
         )}
       </div>
 
@@ -590,18 +702,8 @@ function TodayView({
         {dueSoon.length ? (
           dueSoon.map((t) => <TaskRow key={t.id} task={t} state={state} />)
         ) : (
-          <p className="muted">No deadlines coming up. Nice.</p>
+          <EmptyState art="sun" title="No deadlines coming up" message="Nice — nothing pressing on the calendar." />
         )}
-      </div>
-
-      <div className="card">
-        <h2>Progress</h2>
-        <div className="progress-bar">
-          <div style={{ width: `${donePct}%` }} />
-        </div>
-        <p className="muted" style={{ marginTop: 8 }}>
-          {donePct}% of all tasks done.
-        </p>
       </div>
 
       <AddTaskForm state={state} dueDate={today} />
@@ -611,6 +713,8 @@ function TodayView({
           state={state}
           tasks={open.filter((t) => !t.dueDate || t.dueDate <= today)}
           emptyText="Nothing due today."
+          emptyTitle="A clear day"
+          art="sun"
           mineOnly={mineOnly}
         />
       </div>
@@ -818,13 +922,21 @@ function BrainDumpView({ state }: { state: AppState }) {
       <div className="card">
         <h2>Your dumps</h2>
         {state.dumps.length === 0 ? (
-          <p className="muted">No dumps yet.</p>
+          <EmptyState art="cloud" title="No dumps yet" message="Dump everything on your mind — no sorting yet." />
         ) : (
           state.dumps.map((d) => (
             <div key={d.id} style={{ borderBottom: "1px solid var(--line)", padding: "12px 0" }}>
               <div style={{ whiteSpace: "pre-wrap" }}>{d.rawText}</div>
               <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
-                <span className="chip">{d.status === "sorted" ? "Sorted ✓" : "Unsorted"}</span>
+                <span className="chip">
+                  {d.status === "sorted" ? (
+                    <>
+                      <Icon name="check" size={13} /> Sorted
+                    </>
+                  ) : (
+                    "Unsorted"
+                  )}
+                </span>
                 <span className="muted">{new Date(d.createdAt).toLocaleDateString()}</span>
                 {d.status !== "sorted" ? (
                   <button
@@ -905,7 +1017,17 @@ function LifeRescueView({ state }: { state: AppState }) {
         <div className="energy-chips">
           {(["low", "medium", "high"] as const).map((e) => (
             <button key={e} className={energy === e ? "active" : ""} onClick={() => setEnergy(e)}>
-              {e === "low" ? "Low 🔋" : e === "medium" ? "Medium" : "High ⚡"}
+              {e === "low" ? (
+                <>
+                  <Icon name="battery" size={16} /> Low
+                </>
+              ) : e === "medium" ? (
+                "Medium"
+              ) : (
+                <>
+                  <Icon name="zap" size={16} /> High
+                </>
+              )}
             </button>
           ))}
         </div>
@@ -928,7 +1050,7 @@ function LifeRescueView({ state }: { state: AppState }) {
         <div className="card">
           <h2>Your rescue plan</h2>
           <div className="start-here">
-            <small style={{ color: "var(--sage)" }}>DO THIS FIRST</small>
+            <small className="hero-eyebrow">Do this first</small>
             <h2 style={{ marginTop: 4 }}>{plan.firstStep.title}</h2>
             <p style={{ margin: 0, opacity: 0.9 }}>{plan.firstStep.minutes} minutes</p>
           </div>
@@ -1114,7 +1236,7 @@ function MoneyView({ state, mineOnly }: { state: AppState; mineOnly: boolean }) 
       <div className="card">
         <h2>To pay</h2>
         {unpaid.length === 0 ? (
-          <p className="muted">Nothing unpaid.</p>
+          <EmptyState art="sun" title="All paid up" message="Nothing unpaid right now." />
         ) : (
           unpaid.map((b) => (
             <BillRow key={b.id} bill={b} />
@@ -1139,7 +1261,7 @@ function BillRow({ bill }: { bill: Bill }) {
   const [error, setError] = useState<string | null>(null);
   return (
     <div>
-      <div className="task-row">
+      <div className={`task-row ${bill.paid ? "done" : ""}`}>
         <button
           className="check"
           aria-label={bill.paid ? "Mark unpaid" : "Mark paid"}
@@ -1152,7 +1274,9 @@ function BillRow({ bill }: { bill: Bill }) {
             }
           }}
         >
-          {bill.paid ? "✓" : ""}
+          <svg className="check-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12.5l4.5 4.5L19 7.5" />
+          </svg>
         </button>
         <div style={{ minWidth: 0 }}>
           <div className="task-title" style={bill.paid ? { textDecoration: "line-through", color: "var(--muted)" } : undefined}>
@@ -1174,7 +1298,7 @@ function BillRow({ bill }: { bill: Bill }) {
               invalidate();
             }}
           >
-            🗑️
+            <Icon name="trash" size={18} />
           </button>
         </div>
       </div>
@@ -1241,7 +1365,14 @@ function PendingView({ state, mineOnly }: { state: AppState; mineOnly: boolean }
       <h1>Pending</h1>
       <p className="muted">Things waiting on someone — or something — else.</p>
       <div className="card">
-        <TaskList state={state} tasks={tasks.filter((t) => t.status === "open")} emptyText="Nothing waiting. Nice." mineOnly={mineOnly} />
+        <TaskList
+          state={state}
+          tasks={tasks.filter((t) => t.status === "open")}
+          emptyText="Nothing waiting. Nice."
+          emptyTitle="Nothing waiting"
+          art="clock"
+          mineOnly={mineOnly}
+        />
       </div>
       <AddTaskForm state={state} category="pending" />
     </div>
@@ -1318,11 +1449,13 @@ function ResetDayView({ state }: { state: AppState }) {
           <p className="muted">{plan.note}</p>
           <h3>Keep today</h3>
           {plan.keep.length === 0 ? (
-            <p className="muted">Nothing kept — a clean slate for today.</p>
+            <EmptyState art="leaf" title="Nothing kept" message="A clean slate for today." />
           ) : (
             plan.keep.map((k) => (
               <div key={k.id} className="plan-step">
-                <span className="step-num">✓</span>
+                <span className="step-num">
+                  <Icon name="check" size={16} />
+                </span>
                 <div>
                   <div className="task-title">{taskById.get(k.id)?.title ?? `Task ${k.id}`}</div>
                   <div className="task-meta">{k.reason}</div>
@@ -1336,7 +1469,9 @@ function ResetDayView({ state }: { state: AppState }) {
           ) : (
             plan.move.map((m) => (
               <div key={m.id} className="plan-step">
-                <span className="step-num" style={{ background: "var(--sage)" }}>→</span>
+                <span className="step-num" style={{ background: "var(--sage)" }}>
+                  <Icon name="arrowRight" size={16} />
+                </span>
                 <div>
                   <div className="task-title">{taskById.get(m.id)?.title ?? `Task ${m.id}`}</div>
                   <div className="task-meta">{m.reason}</div>
@@ -1387,19 +1522,26 @@ function WeeklyResetView({ state }: { state: AppState }) {
         <h2>This week, you finished {state.stats.doneThisWeek}</h2>
         {doneThisWeek.length ? (
           doneThisWeek.slice(0, 10).map((t) => (
-            <div key={t.id} className="task-meta" style={{ padding: "3px 0" }}>
-              ✓ {t.title}
+            <div key={t.id} className="done-line">
+              <Icon name="check" size={15} />
+              <span className="task-meta" style={{ marginTop: 0 }}>
+                {t.title}
+              </span>
             </div>
           ))
         ) : (
-          <p className="muted">Nothing finished yet this week — that&apos;s okay, fresh week ahead.</p>
+          <EmptyState
+            art="sun"
+            title="Nothing finished yet this week"
+            message="That's okay — fresh week ahead."
+          />
         )}
       </div>
       <div className="card">
         <h2>Stale tasks ({stale.length})</h2>
         <p className="muted">Overdue and still open. Move them to next week or let them go.</p>
         {stale.length === 0 ? (
-          <p className="muted">Nothing stale.</p>
+          <EmptyState art="leaf" title="Nothing stale" message="Overdue and still open — none right now." />
         ) : (
           stale.map((t) => (
             <div key={t.id} className="task-row">
@@ -1551,6 +1693,7 @@ function PackagesView({ state }: { state: AppState }) {
           const isCurrent = current === p.tier;
           return (
             <div key={p.tier} className={`price-card ${p.featured ? "featured" : ""}`}>
+              {p.featured ? <span className="featured-badge">Most popular</span> : null}
               <h2 style={{ marginBottom: 2 }}>{p.name}</h2>
               <div className="price">{p.price}</div>
               <p className="muted">one-time</p>
@@ -1561,7 +1704,9 @@ function PackagesView({ state }: { state: AppState }) {
                 ))}
               </ul>
               {isCurrent ? (
-                <span className="chip chip-paid">Your plan ✓</span>
+                <span className="chip chip-paid">
+                  <Icon name="check" size={13} /> Your plan
+                </span>
               ) : url ? (
                 <a className="btn" href={url} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>
                   Buy {p.name} — {p.price}
@@ -1863,7 +2008,13 @@ function HouseholdView({ state }: { state: AppState }) {
                 <div key={c.id} style={{ borderBottom: "1px solid var(--line)", padding: "8px 0" }}>
                   <div className="task-title">
                     {c.code} <span className="chip">{c.tier}</span>{" "}
-                    {c.redeemed ? <span className="tag">Used ✓</span> : <span className="tag">Unused</span>}
+                    {c.redeemed ? (
+                      <span className="tag">
+                        <Icon name="check" size={12} /> Used
+                      </span>
+                    ) : (
+                      <span className="tag">Unused</span>
+                    )}
                   </div>
                   <div className="task-meta">
                     {c.note ? `${c.note} · ` : ""}
@@ -2045,7 +2196,12 @@ function AuthedApp({
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand">LIFE RESET</div>
+        <div className="brand">
+          <span className="brand-mark">
+            <LogoMark size={30} />
+          </span>
+          LIFE RESET
+        </div>
         <div className="brand-sub">Get your life back.</div>
         {NAV.map((item) => {
           if (item.section && item.section !== currentSection) {
@@ -2097,16 +2253,24 @@ function AuthedApp({
           const item = NAV.find((n) => n.view === v)!;
           return (
             <button key={v} className={view === v ? "active" : ""} onClick={() => setView(v)}>
-              <span className="nav-ico">{item.icon}</span>
+              <span className="nav-ico">
+                <Icon name={item.icon} size={22} />
+              </span>
               {item.label}
             </button>
           );
         })}
         <button onClick={() => setView(view === "household" ? "today" : "household")}>
-          <span className="nav-ico">⋯</span>
+          <span className="nav-ico">
+            <Icon name="dots" size={20} />
+          </span>
           More
         </button>
       </nav>
+
+      <button className="fab" aria-label="Quick Brain Dump" onClick={() => setView("braindump")}>
+        <Icon name="plus" size={28} />
+      </button>
     </div>
   );
 }
@@ -2124,9 +2288,15 @@ function NavButton({
 }) {
   return (
     <button className={`nav-item ${active ? "active" : ""}`} onClick={onClick}>
-      <span>{item.icon}</span>
+      <span className="nav-ico">
+        <Icon name={item.icon} size={20} />
+      </span>
       {item.label}
-      {locked ? <span className="lock">🔒</span> : null}
+      {locked ? (
+        <span className="lock">
+          <Icon name="lock" size={13} />
+        </span>
+      ) : null}
     </button>
   );
 }
