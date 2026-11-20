@@ -169,10 +169,10 @@ function AuthScreen() {
       <div className="card auth-card">
         <div className="logo">
           <div className="auth-art">
-            <EmptyArt variant="sun" width={110} />
+            <EmptyArt variant="sun" width={96} />
           </div>
           <div className="logo-mark">
-            <LogoMark size={72} />
+            <LogoMark size={64} />
           </div>
           <h1 style={{ marginTop: 8 }}>LIFE RESET</h1>
           <p className="muted" style={{ margin: 0 }}>
@@ -385,7 +385,7 @@ function TaskRow({
               <span className="prio-dot" />
               {task.priority}
             </span>
-            <span className="tag">{task.category}</span>
+            <span>{task.category}</span>
             {task.estMinutes ? <span>· {task.estMinutes} min </span> : null}
             {task.dueDate ? <span>· due {fmtDate(task.dueDate)}</span> : null}
             {task.waitingOn ? <span>· waiting on {task.waitingOn}</span> : null}
