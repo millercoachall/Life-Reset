@@ -635,7 +635,7 @@ function TodayView({
       ) : null}
 
       {startHere ? (
-        <div className="start-here">
+        <div className="start-here start-here-hero">
           <small className="hero-eyebrow">Start here — your next step</small>
           <h2 style={{ marginTop: 4 }}>{startHere.title}</h2>
           <p style={{ margin: "4px 0 12px", opacity: 0.9 }}>
@@ -719,7 +719,7 @@ function TodayView({
         />
       </div>
       {state.settings.planTier === "free" ? (
-        <div className="card">
+        <div className="card" style={{ textAlign: "center" }}>
           <h2>Want the rest?</h2>
           <p className="muted">
             Life Rescue, My Week, all sections, and both resets unlock with any Life Reset package.
