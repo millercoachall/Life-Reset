@@ -42,9 +42,14 @@ h1, h2, h3 {
   line-height: 1.2;
   letter-spacing: -0.02em;
 }
-h1 { font-size: 28px; }
-h2 { font-size: 21px; }
+h1 { font-size: 30px; }
+h2 { font-size: 22px; }
 h3 { font-size: 17px; }
+/* Small-caps eyebrow used above section titles and hero cards. */
+.eyebrow {
+  display: block; font-size: 11px; font-weight: 800; letter-spacing: 1.6px;
+  text-transform: uppercase; color: var(--coral-dark); margin-bottom: 4px;
+}
 /* Consistent breathing room under a view's intro line. */
 h1 + p.muted { margin-bottom: 18px; }
 /* Centered view headings — hero/greeting/section titles read centered,
@@ -103,8 +108,12 @@ small, .muted { color: var(--muted); font-size: 13px; }
   border-radius: var(--radius);
   padding: 24px;
   margin-bottom: 20px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
 }
+/* Soft fade-up as each view mounts — calm, premium transitions between screens. */
+.main > div { animation: fade-up 0.35s ease; }
+@keyframes fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 .chip {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 5px 12px; border-radius: 999px;
@@ -170,8 +179,9 @@ small, .muted { color: var(--muted); font-size: 13px; }
 .greeting { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; margin-bottom: 20px; }
 .greeting-ico {
   width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0;
-  background: var(--gold-light); color: var(--gold);
+  background: linear-gradient(135deg, var(--gold-light), var(--coral-light)); color: var(--gold);
   display: inline-flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 14px rgba(201, 162, 39, 0.22);
 }
 .greeting h1 { margin: 0; }
 .greeting .greet-date { color: var(--muted); font-size: 14px; }
@@ -276,7 +286,8 @@ small, .muted { color: var(--muted); font-size: 13px; }
 /* Day at a glance strip (Today) — gradient progress ring + stats. */
 .glance {
   display: flex; align-items: center; gap: 18px;
-  background: var(--white); border: 1px solid #f0e9d8; border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--white) 0%, #fdf9ef 100%);
+  border: 1px solid #f0e9d8; border-radius: var(--radius);
   padding: 16px 20px; margin-bottom: 20px; box-shadow: var(--shadow);
 }
 .glance-stats { display: flex; gap: 20px; flex-wrap: wrap; flex: 1; }
@@ -337,8 +348,9 @@ small, .muted { color: var(--muted); font-size: 13px; }
 .locked { text-align: center; padding: 48px 20px; }
 .locked .lock-ico { color: var(--coral); display: inline-flex; margin-bottom: 8px; }
 .price-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.price-card { background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius); padding: 24px; position: relative; text-align: center; }
-.price-card.featured { border-color: var(--coral); box-shadow: var(--shadow-lg); }
+.price-card { background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius); padding: 24px; position: relative; text-align: center; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
+.price-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.price-card.featured { border-color: var(--coral); box-shadow: var(--shadow-lg); background: linear-gradient(180deg, #fffdf8 0%, #fdf3ec 100%); }
 .price-card .price { font-family: "Nunito", "Inter", sans-serif; font-size: 32px; font-weight: 800; color: var(--forest-dark); }
 .price-card ul { padding-left: 18px; margin: 10px auto; font-size: 14px; text-align: left; display: inline-block; }
 .price-card li { margin-bottom: 6px; }
@@ -368,6 +380,52 @@ small, .muted { color: var(--muted); font-size: 13px; }
 .done-line { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
 .done-line svg { color: var(--forest); flex-shrink: 0; }
 
+/* Quick actions (Today) — the three most-used moves, unmissable from home. */
+.quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.quick-action {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
+  background: var(--white); border: 1.5px solid #f0e9d8; border-radius: var(--radius);
+  padding: 20px 12px 16px; color: var(--ink);
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.quick-action:hover { transform: translateY(-2px); border-color: var(--sage); box-shadow: var(--shadow-lg); }
+.quick-action:active { transform: translateY(0) scale(0.98); }
+.quick-action-ico {
+  width: 48px; height: 48px; border-radius: 50%; margin-bottom: 4px;
+  background: var(--sage-light); color: var(--forest);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.quick-action:nth-child(2) .quick-action-ico { background: var(--coral-light); color: var(--coral-dark); }
+.quick-action-title { font-family: "Nunito", "Inter", sans-serif; font-size: 16px; font-weight: 800; color: var(--forest-dark); }
+.quick-action-desc { font-size: 13px; color: var(--muted); line-height: 1.4; }
+.quick-action-arrow { color: var(--sage); margin-top: 4px; display: inline-flex; }
+
+/* First-run welcome — one warm screen for a brand-new household. */
+.welcome-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(30, 77, 56, 0.32);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  animation: fade-up 0.3s ease;
+}
+.welcome-card { max-width: 460px; width: 100%; text-align: center; padding: 32px 28px; margin: 0; border-top: 4px solid var(--coral); }
+.welcome-mark { display: inline-flex; margin-bottom: 10px; }
+.welcome-step { display: flex; gap: 12px; text-align: left; align-items: flex-start; margin: 18px 0; padding: 14px; background: var(--cream); border-radius: 16px; }
+.welcome-step .step-num {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--gold); color: var(--forest-dark);
+  display: inline-flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;
+  font-family: "Nunito", "Inter", sans-serif;
+}
+
+/* Packages — what's included in every tier, and checkout reassurance. */
+.tier-strip { text-align: center; margin: 4px 0 20px; }
+.tier-strip-items { display: flex; gap: 8px 20px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+.tier-strip-items .done-line { padding: 0; font-size: 14px; font-weight: 600; color: var(--forest-dark); }
+.assurance-row { text-align: center; font-size: 13px; color: var(--muted); margin: 18px 0 4px; }
+.redeem-steps { margin: 8px 0 16px; padding-left: 22px; font-size: 15px; }
+.redeem-steps li { margin-bottom: 6px; }
+.redeem-steps li::marker { color: var(--forest); font-weight: 800; }
+
 @media (max-width: 760px) {
   .sidebar { display: none; }
   .mobile-nav { display: flex; }
@@ -382,4 +440,9 @@ small, .muted { color: var(--muted); font-size: 13px; }
   .glance-stats { justify-content: center; }
   .streak-chip { margin-left: 0; }
   .card { padding: 20px 18px; }
+  .quick-actions { grid-template-columns: 1fr; }
+  .quick-action { flex-direction: row; text-align: left; gap: 12px; padding: 16px; }
+  .quick-action-ico { margin-bottom: 0; flex-shrink: 0; }
+  .quick-action-arrow { margin-left: auto; margin-top: 0; }
+  .welcome-card { padding: 28px 22px; }
 }

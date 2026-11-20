@@ -44,11 +44,11 @@ type View =
 const LOCKED_VIEWS: View[] = ["rescue", "week", "home", "money", "family", "myself", "pending", "resetday", "weeklyreset"];
 
 const NAV: { view: View; label: string; icon: IconName; section?: string }[] = [
-  { view: "today", label: "Today", icon: "sun" },
+  { view: "today", label: "Today", icon: "sun", section: "Start here" },
   { view: "braindump", label: "Brain Dump", icon: "cloud" },
   { view: "rescue", label: "Life Rescue", icon: "lifebuoy" },
-  { view: "week", label: "My Week", icon: "calendar" },
-  { view: "home", label: "My Home", icon: "home", section: "Sections" },
+  { view: "week", label: "My Week", icon: "calendar", section: "Your life" },
+  { view: "home", label: "My Home", icon: "home" },
   { view: "money", label: "My Money", icon: "wallet" },
   { view: "family", label: "My Family", icon: "users" },
   { view: "myself", label: "Myself", icon: "leaf" },
@@ -564,10 +564,12 @@ function TodayView({
   state,
   mineOnly,
   onGoPackages,
+  onGo,
 }: {
   state: AppState;
   mineOnly: boolean;
   onGoPackages: () => void;
+  onGo: (v: View) => void;
 }) {
   const today = todayStr();
   const open = state.tasks.filter((t) => t.status === "open");
@@ -677,6 +679,8 @@ function TodayView({
         </div>
       </div>
 
+      <QuickActions onGo={onGo} />
+
       <div className="card">
         <h2>Your top 3 priorities</h2>
         <p className="muted">
@@ -753,6 +757,31 @@ function StartHereButton({ task }: { task: Task }) {
         Done — what&apos;s next?
       </button>
       {error ? <div className="error">{error}</div> : null}
+    </div>
+  );
+}
+
+// The three moves people come back for — one tap from Today.
+function QuickActions({ onGo }: { onGo: (v: View) => void }) {
+  const actions: { view: View; icon: IconName; title: string; desc: string }[] = [
+    { view: "braindump", icon: "cloud", title: "Brain Dump", desc: "Get it all out of your head" },
+    { view: "rescue", icon: "lifebuoy", title: "Life Rescue", desc: "Overwhelmed? Get a plan in minutes" },
+    { view: "week", icon: "calendar", title: "My Week", desc: "See what's coming up" },
+  ];
+  return (
+    <div className="quick-actions">
+      {actions.map((a) => (
+        <button key={a.view} className="quick-action" onClick={() => onGo(a.view)}>
+          <span className="quick-action-ico">
+            <Icon name={a.icon} size={24} />
+          </span>
+          <span className="quick-action-title">{a.title}</span>
+          <span className="quick-action-desc">{a.desc}</span>
+          <span className="quick-action-arrow">
+            <Icon name="arrowRight" size={16} />
+          </span>
+        </button>
+      ))}
     </div>
   );
 }
@@ -1684,9 +1713,26 @@ function PackagesView({ state }: { state: AppState }) {
       <h1>Packages</h1>
       <p className="muted">
         {current === "free"
-          ? "You're on the free plan — Today and Brain Dump. Pick a package to unlock everything."
+          ? "One-time payment, no subscription — pick the level of support that's right for your family."
           : `You're on ${current}.`}
       </p>
+      <div className="tier-strip">
+        <span className="eyebrow">Included in every package</span>
+        <div className="tier-strip-items">
+          <span className="done-line">
+            <Icon name="check" size={14} /> Every section unlocked
+          </span>
+          <span className="done-line">
+            <Icon name="check" size={14} /> Brain Dump + smart sorting
+          </span>
+          <span className="done-line">
+            <Icon name="check" size={14} /> Life Rescue + both resets
+          </span>
+          <span className="done-line">
+            <Icon name="check" size={14} /> Your whole household
+          </span>
+        </div>
+      </div>
       <div className="price-cards">
         {PACKAGES.map((p) => {
           const url = state.settings[p.urlKey];
@@ -1720,12 +1766,21 @@ function PackagesView({ state }: { state: AppState }) {
           );
         })}
       </div>
+      <p className="assurance-row">
+        Secure checkout via Square · Your unlock code arrives by email · Questions?{" "}
+        <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
+      </p>
       <div className="card" style={{ marginTop: 16 }}>
-        <h2>Already paid?</h2>
+        <h2>Already paid? Redeem your code</h2>
         <p className="muted">
-          After checkout, you&apos;ll get a one-time unlock code. Enter it here and your plan flips
-          on instantly.
+          Your unlock code arrives by email right after checkout. Three quick steps and
+          you&apos;re in:
         </p>
+        <ol className="redeem-steps">
+          <li>Check your email for your one-time unlock code.</li>
+          <li>Paste it below and tap Unlock my plan.</li>
+          <li>Your plan flips on instantly — everything unlocks.</li>
+        </ol>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <input
             value={code}
@@ -1740,8 +1795,9 @@ function PackagesView({ state }: { state: AppState }) {
         <Err message={error} />
         {success ? <div className="success">{success}</div> : null}
         <p className="muted" style={{ marginTop: 10 }}>
-          No code yet? Check your email after checkout, or write to{" "}
-          <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
+          Codes are single-use and tied to your household. No code yet, or it doesn&apos;t
+          work? Write to <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> and
+          we&apos;ll sort it out.
         </p>
       </div>
     </div>
@@ -2115,6 +2171,40 @@ export default function App() {
   return <AuthedApp view={view} setView={setView} mineOnly={mineOnly} setMineOnly={setMineOnly} />;
 }
 
+function WelcomeOverlay({ onStart, onDismiss }: { onStart: () => void; onDismiss: () => void }) {
+  return (
+    <div className="welcome-overlay" role="dialog" aria-label="Welcome to Life Reset">
+      <div className="card welcome-card">
+        <span className="welcome-mark">
+          <LogoMark size={44} />
+        </span>
+        <span className="eyebrow">Welcome to Life Reset</span>
+        <h2 style={{ fontSize: 26 }}>Get your life back.</h2>
+        <p className="muted">
+          Life Reset turns the chaos in your head into one calm, clear plan — for your whole
+          household.
+        </p>
+        <div className="welcome-step">
+          <span className="step-num">1</span>
+          <div>
+            <strong>Start with a Brain Dump.</strong>
+            <p className="muted" style={{ margin: "2px 0 0" }}>
+              Get it all out — it takes two minutes — and we&apos;ll help you sort it into a
+              plan.
+            </p>
+          </div>
+        </div>
+        <button className="btn" onClick={onStart} style={{ width: "100%" }}>
+          Start my Brain Dump
+        </button>
+        <button className="btn btn-ghost" onClick={onDismiss} style={{ width: "100%" }}>
+          Take a look around first
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AuthedApp({
   view,
   setView,
@@ -2127,6 +2217,7 @@ function AuthedApp({
   setMineOnly: (b: boolean) => void;
 }) {
   const app = useAppState();
+  const [showWelcome, setShowWelcome] = useState(true);
   if (app.isPending) {
     return (
       <div className="auth-wrap">
@@ -2158,12 +2249,15 @@ function AuthedApp({
   const isFree = state.settings.planTier === "free";
   const isAdmin = state.viewer.role === "admin";
   const goPackages = () => setView("packages");
+  // Brand-new household: nothing created yet — show the one-screen welcome.
+  const isNewHousehold =
+    state.tasks.length === 0 && state.dumps.length === 0 && state.bills.length === 0;
 
   let content: React.ReactNode;
   if (isFree && LOCKED_VIEWS.includes(view)) {
     content = <LockedScreen onGoPackages={goPackages} />;
   } else if (view === "today") {
-    content = <TodayView state={state} mineOnly={mineOnly} onGoPackages={goPackages} />;
+    content = <TodayView state={state} mineOnly={mineOnly} onGoPackages={goPackages} onGo={setView} />;
   } else if (view === "braindump") {
     content = <BrainDumpView state={state} />;
   } else if (view === "rescue") {
@@ -2271,6 +2365,16 @@ function AuthedApp({
       <button className="fab" aria-label="Quick Brain Dump" onClick={() => setView("braindump")}>
         <Icon name="plus" size={28} />
       </button>
+
+      {isNewHousehold && showWelcome ? (
+        <WelcomeOverlay
+          onStart={() => {
+            setShowWelcome(false);
+            setView("braindump");
+          }}
+          onDismiss={() => setShowWelcome(false)}
+        />
+      ) : null}
     </div>
   );
 }
