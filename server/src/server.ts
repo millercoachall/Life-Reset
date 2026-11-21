@@ -136,8 +136,21 @@ const server = Bun.serve({
     if (!(await file.exists())) {
       return notFound();
     }
+    // Cache policy: the shell is always fresh so it points at the current
+    // hashed bundle; hashed bundles are immutable and cacheable forever.
+    // Without this, phones with the app saved to the home screen keep
+    // serving the old bundle after a deploy.
+    const cacheControl =
+      filePath === "/index.html" || filePath === "/about.html"
+        ? "no-cache"
+        : /^\/main\.[0-9a-f]{8}\.(js|css)$/.test(filePath)
+          ? "public, max-age=31536000, immutable"
+          : undefined;
     return new Response(file, {
-      headers: headers({ "Content-Type": MIME[ext(resolved)] || "application/octet-stream" }),
+      headers: headers({
+        "Content-Type": MIME[ext(resolved)] || "application/octet-stream",
+        ...(cacheControl ? { "Cache-Control": cacheControl } : {}),
+      }),
     });
   },
 });
