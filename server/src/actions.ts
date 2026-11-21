@@ -75,6 +75,8 @@ function requireSellerAdmin(viewer: Viewer): SettingsRow {
 
 function requirePaid(viewer: Viewer, featureName: string): void {
   const settings = getSettings(viewer.householdId);
+  // The seller household (Miller Household) is always unlocked.
+  if (settings.isSeller) return;
   if (TIER_RANK[settings.planTier] === 0) {
     err(`${featureName} is part of a paid plan. See Packages to unlock it.`);
   }

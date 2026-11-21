@@ -2363,7 +2363,8 @@ function AuthedApp({
   }
 
   const state = app.data;
-  const isFree = state.settings.planTier === "free";
+  // The seller household (Miller Household) is always unlocked, whatever its stored plan says.
+  const isFree = state.settings.planTier === "free" && !state.settings.isSeller;
   const isAdmin = state.viewer.role === "admin";
   const goPackages = () => setView("packages");
   // Brand-new household: nothing created yet — show the one-screen welcome.
