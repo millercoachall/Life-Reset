@@ -462,6 +462,13 @@ small, .muted { color: var(--muted); font-size: 13px; }
 }
 .hero-before-after p { margin: 0 0 8px; }
 .hero-before-after p:last-child { margin-bottom: 0; }
+.hero-testimonials { display: grid; gap: 12px; margin-top: 16px; text-align: left; }
+.hero-quote {
+  margin: 0; padding: 14px 16px; background: var(--white);
+  border: 1px solid #f0e9d8; border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.hero-quote blockquote { margin: 0 0 8px; font-style: italic; }
+.hero-quote figcaption { font-size: 13px; font-weight: 700; color: var(--forest-dark); }
 
 /* Site footer — Home / About / contact / builder credit. */
 .site-footer {

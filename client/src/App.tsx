@@ -243,6 +243,23 @@ function AuthScreen() {
               and the next step is always obvious.
             </p>
           </div>
+          <div className="hero-testimonials">
+            <figure className="hero-quote">
+              <blockquote>
+                “This app has helped me better organize myself, and it’s let me task out the
+                kids and my husband to help — we’re accomplishing more daily!”
+              </blockquote>
+              <figcaption>— Brittany Miller, creator of Life Reset</figcaption>
+            </figure>
+            <figure className="hero-quote">
+              <blockquote>
+                “The Brain Dump has helped me tremendously. I’m always thinking and have so
+                much in my head, but it organizes my thoughts, keeps things straight, and
+                helps me accomplish more in the day without thinking about things all day!”
+              </blockquote>
+              <figcaption>— Nicole Weil</figcaption>
+            </figure>
+          </div>
         </div>
         <div className="card auth-card">
         <div className="tabs">
