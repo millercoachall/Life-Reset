@@ -36,6 +36,17 @@ const server = Bun.serve({
       return Response.json({ ok: true, service: "life-reset" });
     }
 
+    // HeyCatch short links: a single-character path is a channel link
+    // (e.g. /i for Instagram). Forward it to / with the attribution query
+    // so analytics records which platform the visitor came from.
+    const shortLink = url.pathname.match(/^\/([a-z0-9])$/);
+    if (shortLink) {
+      return Response.redirect(
+        new URL(`/?utm_source=heycatch&utm_campaign=${shortLink[1]}`, url),
+        302,
+      );
+    }
+
     if (url.pathname === "/actions" && req.method === "POST") {
       try {
         const body = (await req.json()) as { action?: string; args?: Record<string, unknown> };

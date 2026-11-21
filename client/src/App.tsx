@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { analytics } from "@heycatch/sdk";
 import { Icon, LogoMark, EmptyArt, ProgressRing } from "./icons";
 import type { IconName, ArtVariant } from "./icons";
 import {
@@ -2097,6 +2098,7 @@ function HouseholdView({ state }: { state: AppState }) {
           className="btn btn-secondary"
           onClick={async () => {
             await callAction("logout", {});
+            analytics.resetIdentity();
             setToken(null);
             invalidate();
           }}
@@ -2218,6 +2220,17 @@ function AuthedApp({
 }) {
   const app = useAppState();
   const [showWelcome, setShowWelcome] = useState(true);
+
+  // HeyCatch identity: attach this member (stable id) + current plan whenever
+  // the signed-in viewer or the plan changes. Runs once per change, not per render.
+  const viewerId = app.data?.viewer.id;
+  const viewerName = app.data?.viewer.name;
+  const planTier = app.data?.settings.planTier;
+  useEffect(() => {
+    if (!viewerId) return;
+    analytics.setIdentity(`member-${viewerId}`, { name: viewerName, plan: planTier });
+  }, [viewerId, viewerName, planTier]);
+
   if (app.isPending) {
     return (
       <div className="auth-wrap">

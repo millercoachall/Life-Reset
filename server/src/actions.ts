@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { analytics } from "@heycatch/sdk";
 import { getDb, nowIso, todayStr, TIER_RANK, type PlanTier } from "./db";
 import {
   getViewer,
@@ -13,6 +14,13 @@ import {
   type MemberRow,
 } from "./auth";
 import { sortBrainDump as aiSortBrainDump, lifeRescue as aiLifeRescue, resetMyDay as aiResetMyDay, type TaskInput } from "./ai";
+
+// HeyCatch analytics (server side): init once per server bundle. Business
+// outcomes the backend knows — household sign-up, plan unlock — are sent
+// from here so an adblocker can never eat them.
+analytics.init({
+  projectKey: "hck_pk_3pieM5kzlaP-KwKZMaGD56tCNZ7cumHR",
+});
 
 const CATEGORIES = ["home", "money", "family", "myself", "pending", "general"] as const;
 const PRIORITIES = ["high", "medium", "low"] as const;
@@ -240,7 +248,7 @@ function getAuthState(args: any) {
 }
 
 // ---------------------------------------------------------------- auth actions
-function createHousehold(args: any) {
+async function createHousehold(args: any) {
   const schema = z.object({
     householdName: z.string().min(1).max(80),
     name: z.string().min(1).max(60),
@@ -281,6 +289,11 @@ function createHousehold(args: any) {
     .run(householdId, name, username, hashPin(pin, salt), salt, now);
   const memberId = Number(m.lastInsertRowid);
   const sessionToken = createSession(memberId, householdId);
+  // HeyCatch: a new household is a completed sign-up. The server is the only
+  // side that knows it happened, so the event goes out from here.
+  const identityId = `member-${memberId}`;
+  await analytics.setIdentity(identityId, { plan: "free" });
+  await analytics.trackEvent("signup_completed", {}, { userId: identityId });
   return { sessionToken, householdId, memberId };
 }
 
@@ -858,7 +871,7 @@ function listUnlockCodes(args: any) {
   };
 }
 
-function redeemUnlockCode(args: any) {
+async function redeemUnlockCode(args: any) {
   const schema = z.object({ code: z.string().min(1).max(40), sessionToken: sessionTokenSchema });
   const { code } = schema.parse(args);
   const viewer = requireViewer(args.sessionToken);
@@ -881,6 +894,11 @@ function redeemUnlockCode(args: any) {
   db.query(
     "UPDATE unlock_codes SET redeemedByHouseholdId = ?, redeemedAt = ? WHERE id = ?"
   ).run(viewer.householdId, nowIso(), row.id);
+  // HeyCatch: a redeemed unlock code is a completed purchase — the backend
+  // knows, so the event goes out from here with the buyer's stable id.
+  const identityId = `member-${viewer.member.id}`;
+  await analytics.setIdentity(identityId, { plan: row.tier });
+  await analytics.trackEvent("plan_unlocked", { plan: row.tier }, { userId: identityId });
   return { planTier: row.tier as PlanTier, alreadyHadTier: false };
 }
 
