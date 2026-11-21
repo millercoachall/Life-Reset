@@ -167,20 +167,84 @@ function AuthScreen() {
 
   return (
     <div className="auth-wrap">
-      <div className="card auth-card">
-        <div className="logo">
-          <div className="auth-art">
-            <EmptyArt variant="sun" width={96} />
-          </div>
+      <div className="auth-col">
+        <div className="auth-hero">
           <div className="logo-mark">
-            <LogoMark size={64} />
+            <LogoMark size={56} />
           </div>
-          <h1 style={{ marginTop: 8 }}>LIFE RESET</h1>
-          <p className="muted" style={{ margin: 0 }}>
-            Get your life back.
+          <span className="eyebrow">Get your life back.</span>
+          <h1>Life Reset — the household organizer that helps you catch up.</h1>
+          <p className="hero-def">
+            Life Reset is a household organizer that turns the chaos in your head into one calm,
+            shared plan.
           </p>
-          <p className="muted">When you can&apos;t keep up, we help you catch up.</p>
+          <div className="hero-visual" aria-label="Example: a sorted Today plan in Life Reset">
+            <div className="hero-visual-head">
+              <span className="hero-visual-title">Today</span>
+              <span className="chip">2 done · 2 to go</span>
+            </div>
+            <div className="hero-task done">
+              <span className="hero-check">✓</span>
+              <span className="hero-task-title">Pay the electric bill</span>
+              <span className="hero-task-meta">Today · Mom</span>
+            </div>
+            <div className="hero-task done">
+              <span className="hero-check">✓</span>
+              <span className="hero-task-title">Sign the field trip form</span>
+              <span className="hero-task-meta">Today · Dad</span>
+            </div>
+            <div className="hero-task">
+              <span className="hero-check" />
+              <span className="hero-task-title">Practice at 5 — cleats in the car</span>
+              <span className="hero-task-meta">Today · Everyone</span>
+            </div>
+            <div className="hero-task">
+              <span className="hero-check" />
+              <span className="hero-task-title">Groceries for the week</span>
+              <span className="hero-task-meta">Tomorrow · Mom</span>
+            </div>
+          </div>
+          <div className="hero-steps">
+            <div className="plan-step">
+              <span className="step-num first">1</span>
+              <div>
+                <strong>Capture everything.</strong>
+                <p className="muted" style={{ margin: "2px 0 0" }}>
+                  Get it out of your head in two minutes.
+                </p>
+              </div>
+            </div>
+            <div className="plan-step">
+              <span className="step-num">2</span>
+              <div>
+                <strong>Sort it into one shared plan.</strong>
+                <p className="muted" style={{ margin: "2px 0 0" }}>
+                  Today, this week, who is doing what.
+                </p>
+              </div>
+            </div>
+            <div className="plan-step">
+              <span className="step-num">3</span>
+              <div>
+                <strong>Reset your day.</strong>
+                <p className="muted" style={{ margin: "2px 0 0" }}>
+                  Pick the next step and let the rest wait.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="hero-before-after">
+            <p>
+              <strong>Before:</strong> Sunday night, everything lived in your head — and you
+              were the only one who knew what Monday needed.
+            </p>
+            <p>
+              <strong>After:</strong> The plan is written down, shared with the whole household,
+              and the next step is always obvious.
+            </p>
+          </div>
         </div>
+        <div className="card auth-card">
         <div className="tabs">
           <button className={tab === "signin" ? "active" : ""} onClick={() => setTab("signin")}>
             Sign in
@@ -252,6 +316,9 @@ function AuthScreen() {
                 {busy ? "Joining…" : "Join this household"}
               </button>
             </div>
+            <p className="muted" style={{ marginTop: 12, textAlign: "center" }}>
+              Free forever — no card, no trial. Paid plans are optional later.
+            </p>
           </form>
         )}
         {tab === "start" && (
@@ -261,9 +328,10 @@ function AuthScreen() {
               submit("createHousehold", { householdName, name, username, pin });
             }}
           >
+            <h2 style={{ textAlign: "left", marginBottom: 4 }}>Create your first household.</h2>
             <p className="muted">
-              New here? Start your own private household. You&apos;ll be the admin, and your family
-              can join with your join code.
+              Start your own private household. You&apos;ll be the admin, and your family can
+              join with your join code.
             </p>
             <label>Household name</label>
             <input
@@ -288,6 +356,9 @@ function AuthScreen() {
                 {busy ? "Starting…" : "Start my household"}
               </button>
             </div>
+            <p className="muted" style={{ marginTop: 12, textAlign: "center" }}>
+              Free forever — no card, no trial. Paid plans are optional later.
+            </p>
           </form>
         )}
         {tab === "forgot" && (
@@ -324,8 +395,24 @@ function AuthScreen() {
           Locked out? Email us at{" "}
           <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
         </p>
+        </div>
+        <SiteFooter />
       </div>
     </div>
+  );
+}
+
+function SiteFooter() {
+  return (
+    <footer className="site-footer">
+      <a href="/">Home</a>
+      <span aria-hidden="true">·</span>
+      <a href="/about">About</a>
+      <span aria-hidden="true">·</span>
+      <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
+      <span aria-hidden="true">·</span>
+      <span>Built by Brittany Miller</span>
+    </footer>
   );
 }
 
@@ -2353,6 +2440,7 @@ function AuthedApp({
           </div>
         )}
         {content}
+        <SiteFooter />
       </main>
 
       <nav className="mobile-nav">

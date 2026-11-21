@@ -20,7 +20,7 @@ if (!result.success) {
   process.exit(1);
 }
 
-for (const f of ["index.html", "manifest.json", "icon.svg", "icon-192.png", "icon-512.png"]) {
+for (const f of ["index.html", "manifest.json", "icon.svg", "icon-192.png", "icon-512.png", "og-image.png", "about.html"]) {
   const src = join(root, "client", "public", f);
   if (f === "index.html") {
     cpSync(join(root, "client", "index.html"), join(dist, "index.html"));

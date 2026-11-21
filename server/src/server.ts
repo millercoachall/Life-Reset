@@ -20,11 +20,45 @@ const MIME: Record<string, string> = {
   ".png": "image/png",
   ".ico": "image/x-icon",
   ".webmanifest": "application/manifest+json",
+  ".xml": "application/xml; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
 };
 
 function ext(path: string): string {
   const i = path.lastIndexOf(".");
   return i >= 0 ? path.slice(i) : "";
+}
+
+// Security headers on every response. The Content-Security-Policy allows the
+// HeyCatch SDK's helper host (in.heycatch.ai) for scripts and connections,
+// and Google Fonts for styles/fonts — everything else is 'self'.
+const SECURITY_HEADERS: Record<string, string> = {
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Content-Security-Policy": [
+    "default-src 'self'",
+    "script-src 'self' https://in.heycatch.ai",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data:",
+    "connect-src 'self' https://in.heycatch.ai",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "frame-ancestors 'none'",
+  ].join("; "),
+};
+
+function headers(extra: Record<string, string> = {}): Record<string, string> {
+  return { ...SECURITY_HEADERS, ...extra };
+}
+
+function notFound(): Response {
+  return new Response("Not found", {
+    status: 404,
+    headers: headers({ "Content-Type": "text/plain; charset=utf-8" }),
+  });
 }
 
 const server = Bun.serve({
@@ -33,7 +67,7 @@ const server = Bun.serve({
     const url = new URL(req.url);
 
     if (url.pathname === "/health") {
-      return Response.json({ ok: true, service: "life-reset" });
+      return Response.json({ ok: true, service: "life-reset" }, { headers: headers() });
     }
 
     // HeyCatch short links: a single-character path is a channel link
@@ -41,41 +75,69 @@ const server = Bun.serve({
     // so analytics records which platform the visitor came from.
     const shortLink = url.pathname.match(/^\/([a-z0-9])$/);
     if (shortLink) {
-      return Response.redirect(
-        new URL(`/?utm_source=heycatch&utm_campaign=${shortLink[1]}`, url),
-        302,
+      return new Response(null, {
+        status: 302,
+        headers: headers({
+          Location: new URL(`/?utm_source=heycatch&utm_campaign=${shortLink[1]}`, url).toString(),
+        }),
+      });
+    }
+
+    if (url.pathname === "/robots.txt") {
+      return new Response(
+        "User-agent: *\nAllow: /\nSitemap: https://life-reset-lm2x.onrender.com/sitemap.xml\n",
+        { headers: headers({ "Content-Type": "text/plain; charset=utf-8" }) },
       );
+    }
+
+    if (url.pathname === "/sitemap.xml") {
+      const xml =
+        `<?xml version="1.0" encoding="UTF-8"?>\n` +
+        `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+        `  <url>\n` +
+        `    <loc>https://life-reset-lm2x.onrender.com/</loc>\n` +
+        `    <lastmod>2026-11-21</lastmod>\n` +
+        `  </url>\n` +
+        `</urlset>\n`;
+      return new Response(xml, {
+        headers: headers({ "Content-Type": "application/xml; charset=utf-8" }),
+      });
     }
 
     if (url.pathname === "/actions" && req.method === "POST") {
       try {
         const body = (await req.json()) as { action?: string; args?: Record<string, unknown> };
         if (!body || typeof body.action !== "string") {
-          return Response.json({ ok: false, error: "Missing action." }, { status: 400 });
+          return Response.json({ ok: false, error: "Missing action." }, { status: 400, headers: headers() });
         }
         const data = await handleAction(body.action, body.args ?? {});
-        return Response.json({ ok: true, data });
+        return Response.json({ ok: true, data }, { headers: headers() });
       } catch (e: any) {
         const message =
           e?.issues?.[0]?.message ||
           (typeof e?.message === "string" ? e.message : "Something went wrong.");
         const status = message.includes("sign in") ? 401 : 400;
-        return Response.json({ ok: false, error: message }, { status });
+        return Response.json({ ok: false, error: message }, { status, headers: headers() });
       }
     }
 
-    // Static client (SPA fallback to index.html).
-    let filePath = url.pathname === "/" ? "/index.html" : url.pathname;
-    let file = Bun.file(join(DIST, filePath));
-    if (!(await file.exists())) {
-      filePath = "/index.html";
-      file = Bun.file(join(DIST, filePath));
+    // Static client. "/" serves the app shell and "/about" serves the About
+    // page; anything else must be a real file in dist, or it is a genuine 404
+    // (no SPA fallback — unknown paths must not return the shell).
+    let filePath: string;
+    if (url.pathname === "/") filePath = "/index.html";
+    else if (url.pathname === "/about") filePath = "/about.html";
+    else filePath = url.pathname;
+    const resolved = join(DIST, filePath);
+    if (resolved !== DIST && !resolved.startsWith(DIST + "/")) {
+      return notFound();
     }
+    const file = Bun.file(resolved);
     if (!(await file.exists())) {
-      return new Response("Not found", { status: 404 });
+      return notFound();
     }
     return new Response(file, {
-      headers: { "Content-Type": MIME[ext(filePath)] || "application/octet-stream" },
+      headers: headers({ "Content-Type": MIME[ext(resolved)] || "application/octet-stream" }),
     });
   },
 });

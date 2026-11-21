@@ -426,6 +426,50 @@ small, .muted { color: var(--muted); font-size: 13px; }
 .redeem-steps li { margin-bottom: 6px; }
 .redeem-steps li::marker { color: var(--forest); font-weight: 800; }
 
+/* Auth landing hero (signed-out) — positioning headline, product visual, steps. */
+.auth-col { width: 100%; max-width: 560px; }
+.auth-col .auth-card { margin-left: auto; margin-right: auto; }
+.auth-hero { text-align: center; margin-bottom: 20px; }
+.auth-hero .logo-mark { display: inline-flex; margin-bottom: 10px; }
+.auth-hero h1 { font-size: 30px; }
+.auth-hero .eyebrow { margin-bottom: 6px; }
+.hero-def { font-size: 17px; color: var(--forest-dark); font-weight: 600; max-width: 480px; margin: 0 auto 18px; }
+.hero-visual {
+  background: var(--white); border: 1px solid #f0e9d8; border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); padding: 16px 18px; text-align: left; margin-bottom: 18px;
+}
+.hero-visual-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.hero-visual-title { font-family: "Nunito", "Inter", sans-serif; font-size: 18px; font-weight: 800; color: var(--forest-dark); }
+.hero-task { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #f2ecdd; }
+.hero-task:last-child { border-bottom: none; }
+.hero-check {
+  width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--sage);
+  flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 14px; font-weight: 800; line-height: 1;
+}
+.hero-task.done .hero-check { background: var(--coral); border-color: var(--coral); }
+.hero-task-title { font-weight: 700; }
+.hero-task.done .hero-task-title { text-decoration: line-through; color: var(--muted); }
+.hero-task-meta { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.hero-steps {
+  text-align: left; background: var(--white); border: 1px solid #f0e9d8;
+  border-radius: var(--radius); padding: 8px 18px; margin-bottom: 18px; box-shadow: var(--shadow);
+}
+.hero-before-after {
+  text-align: left; background: linear-gradient(135deg, var(--gold-light), var(--coral-light));
+  border: 1.5px solid #eedcb0; border-radius: var(--radius);
+  padding: 16px 18px; margin-bottom: 4px; font-size: 15px;
+}
+.hero-before-after p { margin: 0 0 8px; }
+.hero-before-after p:last-child { margin-bottom: 0; }
+
+/* Site footer — Home / About / contact / builder credit. */
+.site-footer {
+  display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: center; align-items: center;
+  padding: 18px 12px 8px; font-size: 13px; color: var(--muted); text-align: center;
+}
+.site-footer a { color: var(--forest); font-weight: 600; }
+
 @media (max-width: 760px) {
   .sidebar { display: none; }
   .mobile-nav { display: flex; }
