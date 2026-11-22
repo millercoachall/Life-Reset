@@ -4,9 +4,9 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const SQUARE_LINKS = {
-  essentials: "https://square.link/u/ZlUo3Ah1",
-  complete: "https://square.link/u/fM9kaEWx",
-  vip: "https://square.link/u/2ozR3LI6",
+  essentials: "https://square.link/u/OKktlhxo",
+  complete: null,
+  vip: null,
 } as const;
 
 export type PlanTier = "free" | "essentials" | "complete" | "vip";

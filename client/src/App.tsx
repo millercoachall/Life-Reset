@@ -61,7 +61,7 @@ const NAV: { view: View; label: string; icon: IconName; section?: string }[] = [
   { view: "help", label: "Help", icon: "help" },
 ];
 
-const MOBILE_NAV: View[] = ["today", "braindump", "rescue", "week", "packages"];
+const MOBILE_NAV: View[] = ["today", "braindump", "rescue", "week", "packages", "help"];
 
 const SUPPORT_EMAIL = "millercoachall@gmail.com";
 
@@ -1743,50 +1743,21 @@ const PACKAGES: {
 }[] = [
   {
     tier: "essentials",
-    name: "Essentials",
-    price: "$297",
-    blurb: "The starter organization system.",
+    name: "Life Reset",
+    price: "$249",
+    blurb: "Everything unlocked. One price, one time.",
     features: [
       "Full Life Reset app — every section unlocked",
       "Brain Dump + smart sorting",
       "Life Rescue and both resets",
       "My Week, Home, Money, Family, Myself, Pending",
+      "In-app help and setup guides",
     ],
     urlKey: "squareEssentialsUrl",
   },
-  {
-    tier: "complete",
-    name: "Complete",
-    price: "$997",
-    blurb: "A personal reset, done with you.",
-    features: [
-      "Everything in Essentials",
-      "Personal intake and life inventory",
-      "Custom dashboard and categories",
-      "Prioritized task and deadline map",
-      "Personalized 7-day rescue plan",
-      "Home, family, work, and bill framework",
-      "30 days of support",
-    ],
-    urlKey: "squareCompleteUrl",
-    featured: true,
-  },
-  {
-    tier: "vip",
-    name: "VIP",
-    price: "$1,997",
-    blurb: "The full overhaul, with us beside you.",
-    features: [
-      "Everything in Complete",
-      "Expanded personalization",
-      "90 days of support",
-      "Defined boundaries, so the reset sticks",
-    ],
-    urlKey: "squareVipUrl",
-  },
 ];
 
-function PackagesView({ state }: { state: AppState }) {
+function PackagesView({ state, onGo }: { state: AppState; onGo: (v: View) => void }) {
   const invalidate = useInvalidate();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -1818,30 +1789,30 @@ function PackagesView({ state }: { state: AppState }) {
       <h1>Packages</h1>
       <p className="muted">
         {current === "free"
-          ? "One-time payment, no subscription — pick the level of support that's right for your family."
-          : `You're on ${current}.`}
+          ? "One price, one time — everything unlocked, no subscription."
+          : "You're unlocked — everything is yours."}
       </p>
       <div className="tier-strip">
-        <span className="eyebrow">Included in every package</span>
+        <span className="eyebrow">How it works</span>
         <div className="tier-strip-items">
           <span className="done-line">
-            <Icon name="check" size={14} /> Every section unlocked
+            <Icon name="check" size={14} /> Pay $249 once on Square — no subscription
           </span>
           <span className="done-line">
-            <Icon name="check" size={14} /> Brain Dump + smart sorting
+            <Icon name="check" size={14} /> Your unlock code arrives by email
           </span>
           <span className="done-line">
-            <Icon name="check" size={14} /> Life Rescue + both resets
+            <Icon name="check" size={14} /> Enter it below — everything unlocks instantly
           </span>
           <span className="done-line">
-            <Icon name="check" size={14} /> Your whole household
+            <Icon name="check" size={14} /> No call, no appointment, no waiting on anyone
           </span>
         </div>
       </div>
       <div className="price-cards">
         {PACKAGES.map((p) => {
           const url = state.settings[p.urlKey];
-          const isCurrent = current === p.tier;
+          const isCurrent = current === p.tier || state.settings.isSeller;
           return (
             <div key={p.tier} className={`price-card ${p.featured ? "featured" : ""}`}>
               {p.featured ? <span className="featured-badge">Most popular</span> : null}
@@ -1872,8 +1843,10 @@ function PackagesView({ state }: { state: AppState }) {
         })}
       </div>
       <p className="assurance-row">
-        Secure checkout via Square · Your unlock code arrives by email · Questions?{" "}
-        <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
+        Secure checkout via Square · One-time payment, no subscription · Questions?{" "}
+        <button className="btn btn-ghost" onClick={() => onGo("help")}>
+          See Help
+        </button>
       </p>
       <div className="card" style={{ marginTop: 16 }}>
         <h2>Already paid? Redeem your code</h2>
@@ -2131,14 +2104,12 @@ function HouseholdView({ state }: { state: AppState }) {
         <div className="card">
           <h2>Buyer unlock codes</h2>
           <p className="muted">
-            After a Square payment comes in, make a one-time code for the package bought and send it
-            to the buyer. They enter it under Packages.
+            After a Square payment comes in, make a one-time code and send it to the buyer.
+            One price: $249, everything unlocked. They enter it under Packages.
           </p>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <select value={codeTier} onChange={(e) => setCodeTier(e.target.value)} style={{ flex: "1 1 130px" }}>
-              <option value="essentials">Essentials — $297</option>
-              <option value="complete">Complete — $997</option>
-              <option value="vip">VIP — $1,997</option>
+              <option value="essentials">Life Reset — $249</option>
             </select>
             <input
               value={codeNote}
@@ -2219,15 +2190,44 @@ function HelpView() {
   return (
     <div>
       <h1>Help</h1>
-      <p className="muted">Stuck on something? We&apos;re here.</p>
-      <div className="card" style={{ textAlign: "center" }}>
-        <h2>Email us</h2>
-        <p className="muted">Tell us what&apos;s happening and what you were trying to do.</p>
-        <a className="btn" href={`mailto:${SUPPORT_EMAIL}`} style={{ textDecoration: "none" }}>
-          {SUPPORT_EMAIL}
-        </a>
-        <p className="muted" style={{ marginTop: 12 }}>
-          What helps: your household name, what screen you were on, and what happened.
+      <p className="muted">
+        Stuck on something? Start here — most answers are on this page, no need to wait on
+        anyone.
+      </p>
+      <div className="card">
+        <h2>What happens after you buy</h2>
+        <ol className="redeem-steps">
+          <li>Pay $249 once on Square — one-time, no subscription.</li>
+          <li>Your one-time unlock code arrives by email.</li>
+          <li>
+            Enter it under Packages, &quot;Already paid?&quot; — everything unlocks instantly.
+          </li>
+        </ol>
+        <p className="muted">
+          No call, no appointment, no waiting on anyone. One price unlocks the whole app for
+          your entire household.
+        </p>
+      </div>
+      <div className="card">
+        <h2>What&apos;s included — $249, everything</h2>
+        <p className="muted">
+          The full app, every section: Today, Brain Dump with smart sorting, Life Rescue and
+          both resets, My Week, My Home, My Money, My Family, Myself, and Pending. Your whole
+          household shares one plan.
+        </p>
+        <h3>Start here</h3>
+        <p className="muted">
+          Do a Brain Dump first — get everything out of your head, then sort it into a plan.
+          Two minutes, no organizing yet.
+        </p>
+        <h3>Overwhelmed?</h3>
+        <p className="muted">
+          Open Life Rescue, answer a few questions, and get a plan in minutes.
+        </p>
+        <h3>End of the day or week</h3>
+        <p className="muted">
+          Reset My Day clears today and starts fresh. Weekly Reset reviews the week and sets
+          up the next one.
         </p>
       </div>
       <div className="card">
@@ -2247,10 +2247,11 @@ function HelpView() {
           iPhone: open the link in Safari, tap Share, then &quot;Add to Home Screen.&quot;
           Android: open the link in Chrome, tap the three dots, then &quot;Add to Home screen.&quot;
         </p>
-        <h3>Package or payment questions</h3>
+        <h3>Paid but your code won&apos;t work?</h3>
         <p className="muted">
-          Email us at {SUPPORT_EMAIL}. After checkout you&apos;ll get a one-time unlock code — enter
-          it under Packages, &quot;Already paid?&quot;, and your plan flips on.
+          Double-check the code — one letter off and it won&apos;t go through. If it still
+          won&apos;t work, email us at {SUPPORT_EMAIL} with your household name and we&apos;ll
+          sort it out.
         </p>
       </div>
     </div>
@@ -2397,7 +2398,7 @@ function AuthedApp({
   } else if (view === "weeklyreset") {
     content = <WeeklyResetView state={state} />;
   } else if (view === "packages") {
-    content = <PackagesView state={state} />;
+    content = <PackagesView state={state} onGo={setView} />;
   } else if (view === "household") {
     content = <HouseholdView state={state} />;
   } else {
